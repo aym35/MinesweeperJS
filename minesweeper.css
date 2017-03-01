@@ -1,0 +1,45 @@
+#myTable td { 
+	width:15px;
+	height: 15px;
+	border: 1px solid white;
+	background-color: #a8a8a8;
+}
+
+#myTable td:hover { 
+	background-color: #d6d4d4;
+}
+
+#myTable {
+	/*border: 12px solid black;*/
+	border-style:bevel;
+	text-align: center;
+	margin: auto;
+}
+
+#board {
+	
+}
+
+h1 {
+	text-align:center;
+}
+
+#time-elapsed {
+	display:inline-block;
+	width: 10px;
+}
+#time-display, #mine-display {
+	margin: 10px 0;
+	text-align: center;
+}
+
+.hidden { 
+	display:none; 
+}
+
+
+#winners-table {
+	text-align:center;
+	margin: 20px auto;
+	border:1px solid;
+}
