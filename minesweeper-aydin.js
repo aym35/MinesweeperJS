@@ -30,6 +30,17 @@ board.prototype.initialize = function () {
 		table.appendChild(row);
 	}	
 }
+board.prototype.reInitialize = function () {
+	for (var i = 0; i < this.rows; i++) {
+		this.playingBoard[i] = []; //start the creation of a two dimensional array
+		for (var j = 0; j < this.columns; j++) {
+			var cell = document.getElementById(i + "-" + j);
+			cell.innerHTML = "&nbsp;";
+			cell.style.removeProperty("background");
+			this.playingBoard[i][j] = "-"; //set all corresponding cells to blank
+		}
+	}	
+}
 board.prototype.generateMines = function () {
 	for (var i = 0; i < this.mines; i++) {
 		var location = Math.floor(Math.random() * this.totalSquares);
@@ -95,6 +106,7 @@ function game() {
 	this.initialize = function() {
 		that.timeElapsed += 1;
 		timeDisplay.innerHTML = that.timeElapsed;
+		this.timer = setInterval(myGame.initialize,1000);
 	}
 
 
@@ -130,12 +142,22 @@ game.prototype.youWin =  function () { //stop timer and record winner name and t
 	winnersTable.appendChild(trAppend);
 	winnersTable.classList.remove("hidden");
 }
+game.prototype.restart = function () {
+	clearInterval(this.timer);
+	this.timeElapsed = 0;
+	myBoard.reInitialize();
+	myBoard.generateMines();
+	myBoard.plantMines();
+	myBoard.countAdjacentMines();
+	mineDisplay.innerHTML = myBoard.mines;
+	this.timer = setInterval(myGame.initialize,1000);
+}
 
 
 
 var myGame = new game();
-var timer = setInterval(myGame.initialize,1000);
-
+//var timer = setInterval(myGame.initialize,1000);
+myGame.initialize();
 
 var myBoard = new board();
 myBoard.initialize();
@@ -240,4 +262,8 @@ function determineColor (realValue) {
 		default:
 			return "black";
 	}
+}
+
+function test() {
+	myGame.restart();
 }

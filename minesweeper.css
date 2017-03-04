@@ -43,3 +43,7 @@ h1 {
 	margin: 20px auto;
 	border:1px solid;
 }
+
+#game-controls {
+	text-align:center;
+}
