@@ -1,14 +1,19 @@
 /**********
 ToDos: 
-1) make sure colors are defined at top
-1.5) when instantiating displayControls, are we forgetting to pass in numberOfMines and does it matter
-2) still a bug if one full column or row of " " cell innerHTML values
-3) maybe change cells into buttons
+0) Restarting doesn't restore original styles
+1) Upon Game Over show mines
+  -stop all clicking after game over
+  -if you say something is a mine and it's not, you have to show a red x
+2) use a ! and a ? for unsure (i.e. right-click events)
+2) Fix the top of the display so everything is at the top
+3) Stop defining styles within javascript and start using the addstyle and removestyle functions instead
 **********/
 
-var table = document.createElement("table");
-table.id = "myTable";
 
+/****
+Control the visual displays such as "Mines Left Display" and "Timer Display"
+No logic here - just a way to modify these values in the DOM
+****/
 function displayControls(numberOfMines) {
 	var mineDisplayValue = numberOfMines;
 	var timeDisplayValue = 0;
@@ -32,6 +37,28 @@ displayControls.prototype.adjustMineDisplay= function(number) {
 	this.setMineDisplay((this.returnMineDisplay() + number));
 }
 
+//Determine colors used for pressed and flagged cells (unpressed is specified in CSS)
+var pressedCellColor = "#e0e0e0";
+var flaggedCellColor = "#ff2b47";
+
+//Color for squares with a numerical value (i.e. they have adjacent mines)
+function determineColor (realValue) {
+		switch (realValue) {
+			case 1:
+				return "blue";
+				break;
+			case 2:
+				return "green";
+				break;
+			case 3:
+				return "red";
+			case 4: 
+				return "purple";
+			default:
+				return "black";
+		}	
+}
+
 
 
 function board() {
@@ -41,6 +68,9 @@ function board() {
 	this.mineLocations = new Array(this.mines);
 	this.hiddenBoard = [];
 	this.totalSquares = this.rows * this.columns;
+	this.table = document.createElement("table");
+	this.table.id = "myTable";
+
 }
 board.prototype.initialize = function () {
 	for (var i = 0; i < this.rows; i++) {
@@ -57,7 +87,7 @@ board.prototype.initialize = function () {
 			
 			this.hiddenBoard[i][j] = "-"; //set all corresponding cells to blank
 		}
-		table.appendChild(row);
+		this.table.appendChild(row);
 	}	
 }
 board.prototype.reInitialize = function () {
@@ -132,7 +162,7 @@ board.prototype.showCells = function () {
 function game() {
 	this.timeElapsed = 0;
 	this.myBoard = new board();
-	this.myControls = new displayControls();
+	this.myControls = new displayControls(this.myBoard.mines);
 	var that = this;	
 	this.incrementTimer = function() {
 		that.timeElapsed += 1;
@@ -145,7 +175,7 @@ game.prototype.initialize = function () {
 	this.myBoard.plantMines();
 	this.myBoard.countAdjacentMines();
 
-	document.getElementById('board').appendChild(table);
+	document.getElementById('board').appendChild(this.myBoard.table);
 	this.myControls.setMineDisplay(this.myBoard.mines);
 }
 game.prototype.incrementTimer = function () {
@@ -208,12 +238,13 @@ game.prototype.addClickEvents = function () {
 				if (that.timeElapsed == 0) that.startTimer(); // start the timer if it hasn't been started yet
 				if (this.innerHTML == "?") updateMineValue(1); //If a "?", this means it's a suspected mine. Since you'll be removing the suspected mine by clicking on it, we should increment the minesLeft count
 				var cellValue = that.myBoard.hiddenBoard[(this.id[0])][(this.id[2])];
-				if( cellValue == "*") alert('game over');
+				if( cellValue == "*") that.gameOver(this);
 				else if ( cellValue == "-") that.recursiveLoop(this.id, that.myBoard);
 				else {
 					this.innerHTML = cellValue; 
-					this.style.background = "#e0e0e0";
-					this.style.color = that.determineColor(cellValue);
+					this.style.background = pressedCellColor;
+					this.style.borderColor = pressedCellColor;
+					this.style.color = determineColor(cellValue);
 				} 
 				//Check if you won the game
 				that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
@@ -225,7 +256,7 @@ game.prototype.addClickEvents = function () {
 				if (that.timeElapsed == 0) that.startTimer(); // start the timer if it hasn't been started yet
 				if (this.innerHTML != "?") {
 					this.innerHTML = "?";
-					this.style.background = '#ff2b47';
+					this.style.background = flaggedCellColor;
 					that.myControls.adjustMineDisplay(-1);
 				} else {
 					this.innerHTML = "&nbsp;";
@@ -242,8 +273,10 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 	var i = parseInt(id[0]);
 	var j = parseInt(id[2]);
 	var initialCell = document.getElementById(id);
-	initialCell.innerHTML = " "; // function is only called on blank cells, so we know this is blank
-	initialCell.style.background = "#e0e0e0";
+	initialCell.innerHTML = "."; // function is only called on blank cells, so we know this is blank
+	initialCell.style.color = pressedCellColor;
+	initialCell.style.backgroundColor = pressedCellColor; //because we're putting a ".", we want it to be invisible - we're putting this because in the event of an empty row, it won't collapse in height
+	initialCell.style.borderColor = pressedCellColor;
 
 	var manipulators = [0,-1,1];
 	for (var a in manipulators) {
@@ -256,8 +289,9 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 				
 				if ( realValue != "*" && cell.innerHTML == "&nbsp;") {
 					cell.innerHTML = realValue;
-					cell.style.background = "#e0e0e0";
-					cell.style.color = this.determineColor(realValue);
+					cell.style.background = pressedCellColor;
+					cell.style.borderColor = pressedCellColor;
+					cell.style.color = determineColor(realValue);
 					if (realValue == "-") this.recursiveLoop(val1 + "-" + val2,myBoard1);
 				} 
 			}	
@@ -265,20 +299,23 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 		}
 	}	
 }
-game.prototype.determineColor = function(realValue) {
-	switch (realValue) {
-		case 1:
-			return "blue";
-			break;
-		case 2:
-			return "green";
-			break;
-		case 3:
-			return "red";
-		case 4: 
-			return "purple";
-		default:
-			return "black";
+game.prototype.gameOver = function(cell) {
+	clearInterval(this.timer);
+	cell.innerHTML = "*";
+	cell.style.background = pressedCellColor;
+	cell.style.borderColor = pressedCellColor;
+	cell.style.color = "red";
+	alert('You Lose :(');
+	for (var i = 0; i < this.myBoard.rows; i++ ) {
+		for (var j = 0; j < this.myBoard.columns; j++) {
+			var varCell = document.getElementById(i + "-" + j);
+			//TODO: need to make sure no clicking allowed - maybe modify original click events
+			if (this.myBoard.hiddenBoard[i][j] == "*") {
+				varCell.innerHTML = "*";
+				varCell.style.background = pressedCellColor;
+				varCell.style.borderColor = pressedCellColor;
+			}
+		}
 	}
 }
 

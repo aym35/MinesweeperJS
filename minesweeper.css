@@ -1,8 +1,11 @@
 #myTable td { 
 	width:15px;
 	height: 15px;
-	border: 1px solid white;
-	background-color: #a8a8a8;
+	border: 2px solid;
+	/*background-color: #a8a8a8;*/
+	background-color: #cccccc;
+	border-color: #eeeeee #999999 #999999 #eeeeee;
+	cursor:pointer;
 }
 
 #myTable td:hover { 
@@ -10,10 +13,9 @@
 }
 
 #myTable {
-	/*border: 12px solid black;*/
-	border-style:bevel;
 	text-align: center;
 	margin: auto;
+	background-color: #cccccc;
 }
 
 #board {
