@@ -1,10 +1,6 @@
 #myTable td { 
 	width:15px;
 	height: 15px;
-	border: 2px solid;
-	/*background-color: #a8a8a8;*/
-	background-color: #cccccc;
-	border-color: #eeeeee #999999 #999999 #eeeeee;
 	cursor:pointer;
 }
 
@@ -18,8 +14,22 @@
 	background-color: #cccccc;
 }
 
-#board {
-	
+.unpressed {
+	border: 2px solid;
+	background-color: #cccccc;
+	border-color: #eeeeee #999999 #999999 #eeeeee;
+}
+
+.pressed {
+	border: 2px solid;
+	background-color: #e0e0e0;
+	border-color: #e0e0e0;
+}
+.blank {
+	color: #e0e0e0;
+}
+.flagged {
+	color: #ff2b47;
 }
 
 h1 {

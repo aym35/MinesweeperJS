@@ -1,6 +1,5 @@
 /**********
 ToDos: 
-0) Restarting doesn't restore original styles
 1) Upon Game Over show mines
   -stop all clicking after game over
   -if you say something is a mine and it's not, you have to show a red x
@@ -52,11 +51,24 @@ function determineColor (realValue) {
 				break;
 			case 3:
 				return "red";
+				break;
 			case 4: 
 				return "purple";
+				break;
+			case "-": 
+				return "#e0e0e0";
+				break;
 			default:
 				return "black";
 		}	
+}
+
+//Allows us to add/remove classes for styling purposes
+function replaceClass(cell, class1, class2) {
+	if (cell.classList.contains(class1)) {
+		cell.classList.remove(class1);
+		cell.className += " " + class2;
+	}
 }
 
 
@@ -80,7 +92,7 @@ board.prototype.initialize = function () {
 		for (var j = 0; j < this.columns; j++) {
 			var cell = document.createElement("td");
 			cell.id = (i + "-" + j);
-
+			cell.className = "unpressed";
 			cell.innerHTML = "&nbsp;";
 	
 			row.appendChild(cell);
@@ -96,7 +108,8 @@ board.prototype.reInitialize = function () {
 		for (var j = 0; j < this.columns; j++) {
 			var cell = document.getElementById(i + "-" + j);
 			cell.innerHTML = "&nbsp;";
-			cell.style.removeProperty("background");
+			cell.className = "unpressed";
+			//cell.style.removeProperty("background");
 			this.hiddenBoard[i][j] = "-"; //set all corresponding cells to blank
 		}
 	}	
@@ -241,9 +254,8 @@ game.prototype.addClickEvents = function () {
 				if( cellValue == "*") that.gameOver(this);
 				else if ( cellValue == "-") that.recursiveLoop(this.id, that.myBoard);
 				else {
-					this.innerHTML = cellValue; 
-					this.style.background = pressedCellColor;
-					this.style.borderColor = pressedCellColor;
+					this.innerHTML = cellValue;
+					replaceClass(this, "unpressed","pressed");
 					this.style.color = determineColor(cellValue);
 				} 
 				//Check if you won the game
@@ -256,11 +268,11 @@ game.prototype.addClickEvents = function () {
 				if (that.timeElapsed == 0) that.startTimer(); // start the timer if it hasn't been started yet
 				if (this.innerHTML != "?") {
 					this.innerHTML = "?";
-					this.style.background = flaggedCellColor;
+					this.className += " flagged";
 					that.myControls.adjustMineDisplay(-1);
 				} else {
 					this.innerHTML = "&nbsp;";
-					this.style.removeProperty("background");
+					this.classList.remove("flagged");
 					that.myControls.adjustMineDisplay(1);
 				}
 				//Now check if you won the game
@@ -273,10 +285,8 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 	var i = parseInt(id[0]);
 	var j = parseInt(id[2]);
 	var initialCell = document.getElementById(id);
-	initialCell.innerHTML = "."; // function is only called on blank cells, so we know this is blank
-	initialCell.style.color = pressedCellColor;
-	initialCell.style.backgroundColor = pressedCellColor; //because we're putting a ".", we want it to be invisible - we're putting this because in the event of an empty row, it won't collapse in height
-	initialCell.style.borderColor = pressedCellColor;
+	initialCell.innerHTML = "."; // function is only called on blank cells, so we know this is blank. we're putting this because in the event of an empty row, it won't collapse in height
+	replaceClass(initialCell, "unpressed","pressed blank");
 
 	var manipulators = [0,-1,1];
 	for (var a in manipulators) {
@@ -289,8 +299,7 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 				
 				if ( realValue != "*" && cell.innerHTML == "&nbsp;") {
 					cell.innerHTML = realValue;
-					cell.style.background = pressedCellColor;
-					cell.style.borderColor = pressedCellColor;
+					replaceClass(cell, "unpressed","pressed");
 					cell.style.color = determineColor(realValue);
 					if (realValue == "-") this.recursiveLoop(val1 + "-" + val2,myBoard1);
 				} 
@@ -302,8 +311,7 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 game.prototype.gameOver = function(cell) {
 	clearInterval(this.timer);
 	cell.innerHTML = "*";
-	cell.style.background = pressedCellColor;
-	cell.style.borderColor = pressedCellColor;
+	replaceClass(cell, "unpressed","pressed");
 	cell.style.color = "red";
 	alert('You Lose :(');
 	for (var i = 0; i < this.myBoard.rows; i++ ) {
@@ -312,8 +320,7 @@ game.prototype.gameOver = function(cell) {
 			//TODO: need to make sure no clicking allowed - maybe modify original click events
 			if (this.myBoard.hiddenBoard[i][j] == "*") {
 				varCell.innerHTML = "*";
-				varCell.style.background = pressedCellColor;
-				varCell.style.borderColor = pressedCellColor;
+				replaceClass(varCell, "unpressed","pressed");
 			}
 		}
 	}
