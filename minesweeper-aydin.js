@@ -6,6 +6,7 @@ ToDos:
 2) use a ! and a ? for unsure (i.e. right-click events)
 2) Fix the top of the display so everything is at the top
 3) Stop defining styles within javascript and start using the addstyle and removestyle functions instead
+4) There is a timer bug - clear interval works sporadically
 **********/
 
 
@@ -80,9 +81,7 @@ function board() {
 	this.mineLocations = new Array(this.mines);
 	this.hiddenBoard = [];
 	this.totalSquares = this.rows * this.columns;
-	this.table = document.createElement("table");
-	this.table.id = "myTable";
-
+	this.table = document.getElementById("myTable");
 }
 board.prototype.initialize = function () {
 	for (var i = 0; i < this.rows; i++) {
@@ -129,8 +128,9 @@ board.prototype.showMines = function() {
 		var mineColumn = this.mineLocations[i] % this.rows
 		var mineRow = (this.mineLocations[i] - mineColumn) / (this.columns);
 		var mineId = "" + (mineRow) + "-" + (mineColumn);
-		document.getElementById(mineId).innerHTML = "*";
-
+		var cell = document.getElementById(mineId);
+		cell.innerHTML = "*";
+		replaceClass(cell, "unpressed","pressed");
 	}
 }
 board.prototype.plantMines = function() {
@@ -173,6 +173,7 @@ board.prototype.showCells = function () {
 }
 
 function game() {
+	this.gameInSession = true; //using this mainly to stop timer race conditions
 	this.timeElapsed = 0;
 	this.myBoard = new board();
 	this.myControls = new displayControls(this.myBoard.mines);
@@ -191,12 +192,9 @@ game.prototype.initialize = function () {
 	document.getElementById('board').appendChild(this.myBoard.table);
 	this.myControls.setMineDisplay(this.myBoard.mines);
 }
-game.prototype.incrementTimer = function () {
-	this.timeElapsed += 1;
-	timeDisplay.innerHTML = this.timeElapsed;
-}
 game.prototype.startTimer = function () {
 	this.timer = setInterval(this.incrementTimer,1000);
+	console.log(this.timer);
 }
 game.prototype.checkIfWon = function (varBoard, varMine) {
 	var won = true;
@@ -207,7 +205,6 @@ game.prototype.checkIfWon = function (varBoard, varMine) {
 			var shownValue = document.getElementById(i + "-" + j).innerHTML;
 			if (shownValue == "*" || shownValue == "&nbsp;" || varMine != 0){
 				won = false;
-				//break;
 			} 
 		}
 	}
@@ -232,12 +229,13 @@ game.prototype.youWin =  function () { //stop timer and record winner name and t
 game.prototype.restart = function () {
 	clearInterval(this.timer);
 	this.timeElapsed = 0;
+	this.myControls.setTimeDisplay(this.timeElapsed);
 	this.myBoard.reInitialize();
 	this.myBoard.generateMines();
 	this.myBoard.plantMines();
 	this.myBoard.countAdjacentMines();
 	this.myControls.setMineDisplay(this.myBoard.mines);
-	this.startTimer();
+	this.gameInSession = true;
 }
 game.prototype.addClickEvents = function () {
 	var that = this;
@@ -248,35 +246,39 @@ game.prototype.addClickEvents = function () {
 			
 			//On Left Click
 			cell.addEventListener("click", function (){
-				if (that.timeElapsed == 0) that.startTimer(); // start the timer if it hasn't been started yet
-				if (this.innerHTML == "?") updateMineValue(1); //If a "?", this means it's a suspected mine. Since you'll be removing the suspected mine by clicking on it, we should increment the minesLeft count
-				var cellValue = that.myBoard.hiddenBoard[(this.id[0])][(this.id[2])];
-				if( cellValue == "*") that.gameOver(this);
-				else if ( cellValue == "-") that.recursiveLoop(this.id, that.myBoard);
-				else {
-					this.innerHTML = cellValue;
-					replaceClass(this, "unpressed","pressed");
-					this.style.color = determineColor(cellValue);
-				} 
-				//Check if you won the game
-				that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
+				if (that.gameInSession == true) {
+					if (that.timeElapsed == 0) that.startTimer(); // start the timer if it hasn't been started yet
+					if (this.innerHTML == "?") updateMineValue(1); //If a "?", this means it's a suspected mine. Since you'll be removing the suspected mine by clicking on it, we should increment the minesLeft count
+					var cellValue = that.myBoard.hiddenBoard[(this.id[0])][(this.id[2])];
+					if( cellValue == "*") that.gameOver(this);
+					else if ( cellValue == "-") that.recursiveLoop(this.id, that.myBoard);
+					else {
+						this.innerHTML = cellValue;
+						replaceClass(this, "unpressed","pressed");
+						this.style.color = determineColor(cellValue);
+					} 
+					//Check if you won the game
+					that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
+				}
 			});
 			
 			//On Right Click
 			cell.addEventListener("contextmenu", function(ev) {
-				ev.preventDefault();
-				if (that.timeElapsed == 0) that.startTimer(); // start the timer if it hasn't been started yet
-				if (this.innerHTML != "?") {
-					this.innerHTML = "?";
-					this.className += " flagged";
-					that.myControls.adjustMineDisplay(-1);
-				} else {
-					this.innerHTML = "&nbsp;";
-					this.classList.remove("flagged");
-					that.myControls.adjustMineDisplay(1);
+				if (that.gameInSession == true) {
+					ev.preventDefault();
+					if (that.timeElapsed == 0 && this.gameInSession != false) that.startTimer(); // start the timer if it hasn't been started yet
+					if (this.innerHTML != "?") {
+						this.innerHTML = "?";
+						this.className += " flagged";
+						that.myControls.adjustMineDisplay(-1);
+					} else {
+						this.innerHTML = "&nbsp;";
+						this.classList.remove("flagged");
+						that.myControls.adjustMineDisplay(1);
+					}
+					//Now check if you won the game
+					that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
 				}
-				//Now check if you won the game
-				that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
 			});
 		}
 	}
@@ -309,21 +311,14 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 	}	
 }
 game.prototype.gameOver = function(cell) {
+	this.gameInSession = false;
+	console.log(this.timer);
 	clearInterval(this.timer);
 	cell.innerHTML = "*";
 	replaceClass(cell, "unpressed","pressed");
 	cell.style.color = "red";
 	alert('You Lose :(');
-	for (var i = 0; i < this.myBoard.rows; i++ ) {
-		for (var j = 0; j < this.myBoard.columns; j++) {
-			var varCell = document.getElementById(i + "-" + j);
-			//TODO: need to make sure no clicking allowed - maybe modify original click events
-			if (this.myBoard.hiddenBoard[i][j] == "*") {
-				varCell.innerHTML = "*";
-				replaceClass(varCell, "unpressed","pressed");
-			}
-		}
-	}
+	this.myBoard.showMines();
 }
 
 

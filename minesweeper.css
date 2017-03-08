@@ -1,7 +1,6 @@
 #myTable td { 
 	width:15px;
 	height: 15px;
-	cursor:pointer;
 }
 
 #myTable td:hover { 
@@ -18,12 +17,14 @@
 	border: 2px solid;
 	background-color: #cccccc;
 	border-color: #eeeeee #999999 #999999 #eeeeee;
+	cursor:pointer;
 }
 
 .pressed {
 	border: 2px solid;
 	background-color: #e0e0e0;
 	border-color: #e0e0e0;
+	cursor:default;
 }
 .blank {
 	color: #e0e0e0;
@@ -40,10 +41,35 @@ h1 {
 	display:inline-block;
 	width: 10px;
 }
-#time-display, #mine-display {
+#time-display, #mine-display, #face-display {
 	margin: 10px 0;
 	text-align: center;
+	width: 100px;
+	display:inline;
 }
+#face-display {
+	background-image: url("happy.gif");
+	background-repeat:no-repeat;
+}
+#time-display, #mine-display {
+	background-color:black;
+	color:red;
+	text-align:right;
+}
+
+#time-elapsed, #face, #mines-left {
+	display:inline-block;
+}
+#time-elapsed, #mines-left {
+	width:40px;
+	height:20px;
+}
+/*#time-elapsed {
+	float:left;
+}
+#mines-left {
+	float:right;
+}*/
 
 .hidden { 
 	display:none; 
