@@ -1,12 +1,12 @@
 /**********
 ToDos: 
 1) Upon Game Over show mines
-  -stop all clicking after game over
   -if you say something is a mine and it's not, you have to show a red x
 2) use a ! and a ? for unsure (i.e. right-click events)
-2) Fix the top of the display so everything is at the top
 3) Stop defining styles within javascript and start using the addstyle and removestyle functions instead
-4) There is a timer bug - clear interval works sporadically
+5) Maybe allow people to choose how big a mine-field they want
+6) The colors of the mines are all over the place
+7) Make sure that code is efficient - i.e. just go through everything one last time
 **********/
 
 
@@ -36,10 +36,6 @@ function displayControls(numberOfMines) {
 displayControls.prototype.adjustMineDisplay= function(number) {
 	this.setMineDisplay((this.returnMineDisplay() + number));
 }
-
-//Determine colors used for pressed and flagged cells (unpressed is specified in CSS)
-var pressedCellColor = "#e0e0e0";
-var flaggedCellColor = "#ff2b47";
 
 //Color for squares with a numerical value (i.e. they have adjacent mines)
 function determineColor (realValue) {
@@ -175,6 +171,7 @@ board.prototype.showCells = function () {
 function game() {
 	this.gameInSession = true; //using this mainly to stop timer race conditions
 	this.timeElapsed = 0;
+	this.timerStarted = false;
 	this.myBoard = new board();
 	this.myControls = new displayControls(this.myBoard.mines);
 	var that = this;	
@@ -193,8 +190,8 @@ game.prototype.initialize = function () {
 	this.myControls.setMineDisplay(this.myBoard.mines);
 }
 game.prototype.startTimer = function () {
+	this.timerStarted = true;
 	this.timer = setInterval(this.incrementTimer,1000);
-	console.log(this.timer);
 }
 game.prototype.checkIfWon = function (varBoard, varMine) {
 	var won = true;
@@ -212,21 +209,26 @@ game.prototype.checkIfWon = function (varBoard, varMine) {
 }
 game.prototype.youWin =  function () { //stop timer and record winner name and time in table
 	var winningTime = this.timeElapsed;
+	this.timerStarted = false;
 	clearInterval(this.timer);
+	document.getElementById("face-display").style.backgroundImage = "url('happy.gif')";
 	alert('your winning time is: ' + winningTime);
+	
 	var name = prompt("What is your name?", "N/A");
 	var tdName = document.createElement("td");
-	tdName.innerHTML = name;
 	var tdTime = document.createElement("td");
-	tdTime.innerHTML = winningTime;
 	var trAppend = document.createElement("tr");
+	var winnersTable = document.getElementById("winners-table");
+
+	tdName.innerHTML = name;
+	tdTime.innerHTML = winningTime;
 	trAppend.appendChild(tdName);
 	trAppend.appendChild(tdTime);
-	var winnersTable = document.getElementById("winners-table")
 	winnersTable.appendChild(trAppend);
 	winnersTable.classList.remove("hidden");
 }
 game.prototype.restart = function () {
+	this.timerStarted = false
 	clearInterval(this.timer);
 	this.timeElapsed = 0;
 	this.myControls.setTimeDisplay(this.timeElapsed);
@@ -236,6 +238,7 @@ game.prototype.restart = function () {
 	this.myBoard.countAdjacentMines();
 	this.myControls.setMineDisplay(this.myBoard.mines);
 	this.gameInSession = true;
+	document.getElementById("face-display").style.backgroundImage = "url('bored.gif')";
 }
 game.prototype.addClickEvents = function () {
 	var that = this;
@@ -247,18 +250,20 @@ game.prototype.addClickEvents = function () {
 			//On Left Click
 			cell.addEventListener("click", function (){
 				if (that.gameInSession == true) {
-					if (that.timeElapsed == 0) that.startTimer(); // start the timer if it hasn't been started yet
-					if (this.innerHTML == "?") updateMineValue(1); //If a "?", this means it's a suspected mine. Since you'll be removing the suspected mine by clicking on it, we should increment the minesLeft count
 					var cellValue = that.myBoard.hiddenBoard[(this.id[0])][(this.id[2])];
-					if( cellValue == "*") that.gameOver(this);
-					else if ( cellValue == "-") that.recursiveLoop(this.id, that.myBoard);
+					if( cellValue == "*") that.gameOver(this); 
 					else {
-						this.innerHTML = cellValue;
-						replaceClass(this, "unpressed","pressed");
-						this.style.color = determineColor(cellValue);
+						if (that.timeElapsed == 0 && that.timerStarted == false) that.startTimer(); // start the timer if it hasn't been started yet
+						if (this.innerHTML == "?") that.myControls.adjustMineDisplay(1); //If a "?", this means it's a suspected mine. Since you'll be removing the suspected mine by clicking on it, we should increment minesLeft count
+						if ( cellValue == "-") that.recursiveLoop(this.id, that.myBoard);
+						else {
+							this.innerHTML = cellValue;
+							replaceClass(this, "unpressed","pressed");
+							this.style.color = determineColor(cellValue);
 					} 
 					//Check if you won the game
 					that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
+					}
 				}
 			});
 			
@@ -266,7 +271,7 @@ game.prototype.addClickEvents = function () {
 			cell.addEventListener("contextmenu", function(ev) {
 				if (that.gameInSession == true) {
 					ev.preventDefault();
-					if (that.timeElapsed == 0 && this.gameInSession != false) that.startTimer(); // start the timer if it hasn't been started yet
+					if (that.timeElapsed == 0 && that.timerStarted == false) that.startTimer(); // start the timer if it hasn't been started yet
 					if (this.innerHTML != "?") {
 						this.innerHTML = "?";
 						this.className += " flagged";
@@ -278,6 +283,16 @@ game.prototype.addClickEvents = function () {
 					}
 					//Now check if you won the game
 					that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
+				}
+			});
+			cell.addEventListener("mousedown", function () {
+				if (that.gameInSession == true) {
+					document.getElementById("face-display").style.backgroundImage = "url('oh.gif')";
+				}
+			});
+			window.addEventListener("mouseup", function() { //using window here since you might start the click on the cell and move over and let go on the side lol
+				if (that.gameInSession == true) {
+					document.getElementById("face-display").style.backgroundImage = "url('bored.gif')";
 				}
 			});
 		}
@@ -312,13 +327,14 @@ game.prototype.recursiveLoop = function(id, myBoard1) {
 }
 game.prototype.gameOver = function(cell) {
 	this.gameInSession = false;
-	console.log(this.timer);
+	this.timerStarted = false;
 	clearInterval(this.timer);
 	cell.innerHTML = "*";
 	replaceClass(cell, "unpressed","pressed");
 	cell.style.color = "red";
 	alert('You Lose :(');
 	this.myBoard.showMines();
+	document.getElementById("face-display").style.backgroundImage = "url('sad.gif')";
 }
 
 
