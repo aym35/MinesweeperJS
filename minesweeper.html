@@ -5,10 +5,19 @@
 </head>
 <body>
 <h1>Aydin's Minesweeper</h1>
-<div id="game-controls"><a href="#" onclick="test()"> Restart</a></div>
-<div id="board"></div>
-<div id="time-display">Time Elapsed: <span id="time-elapsed">0</span></div>
-<div id="mine-display">Mines Left: <span id="mines-left">&nbsp;</span></div>
+<div id="board">
+	<table id="myTable">
+	<th>
+		<tr>
+			<td colspan = "8">
+				<div id="time-display"><span id="time-elapsed">0</span></div>
+				<div id="face-display" onclick="myGame.restart()"><span id="face">&nbsp;</span></div>
+				<div id="mine-display"><span id="mines-left">&nbsp;</span></div>
+			</td>
+		</tr>
+	</th>
+	</table>
+</div>
 <div id="winners">
 	<table id="winners-table" class="hidden">
 		<th><tr>

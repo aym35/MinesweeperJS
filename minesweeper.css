@@ -1,8 +1,6 @@
 #myTable td { 
 	width:15px;
 	height: 15px;
-	border: 1px solid white;
-	background-color: #a8a8a8;
 }
 
 #myTable td:hover { 
@@ -10,14 +8,29 @@
 }
 
 #myTable {
-	/*border: 12px solid black;*/
-	border-style:bevel;
 	text-align: center;
 	margin: auto;
+	background-color: #cccccc;
 }
 
-#board {
-	
+.unpressed {
+	border: 2px solid;
+	background-color: #cccccc;
+	border-color: #eeeeee #999999 #999999 #eeeeee;
+	cursor:pointer;
+}
+
+.pressed {
+	border: 2px solid;
+	background-color: #e0e0e0;
+	border-color: #e0e0e0;
+	cursor:default;
+}
+.blank {
+	color: #e0e0e0;
+}
+.flagged {
+	color: #ff2b47;
 }
 
 h1 {
@@ -26,12 +39,49 @@ h1 {
 
 #time-elapsed {
 	display:inline-block;
-	width: 10px;
+	width: 15px;
 }
+
+
 #time-display, #mine-display {
-	margin: 10px 0;
-	text-align: center;
+	background-color:black;
+	color:red;
+	text-align:right;
 }
+#time-display {
+	float: left;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+	-border-radius:2px;
+	margin:5px 5px 5px 10px;
+}
+#mine-display {
+	float: right;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+	-border-radius:2px;
+	margin:5px 10px 5px 5px;
+}
+#face-display {
+	float:none; width:24px; height:24px; display:inline-block;
+	margin:5px;
+	background-image: url("bored.gif");
+	background-repeat:no-repeat;
+}
+#time-elapsed, #face, #mines-left {
+	display:inline-block;
+	margin:2px;
+}
+#time-elapsed, #mines-left {
+	width:50px;
+	height:20px;
+}
+/*#time-elapsed {
+	float:left;
+}
+#mines-left {
+	float:right;
+}*/
 
 .hidden { 
 	display:none; 
