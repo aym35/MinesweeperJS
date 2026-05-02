@@ -1,12 +1,8 @@
 /**********
-ToDos: 
-1) Upon Game Over show mines
-  -if you say something is a mine and it's not, you have to show a red x
-2) use a ! and a ? for unsure (i.e. right-click events)
-3) Stop defining styles within javascript and start using the addstyle and removestyle functions instead
-5) Maybe allow people to choose how big a mine-field they want
-6) The colors of the mines are all over the place
-7) Make sure that code is efficient - i.e. just go through everything one last time
+ToDos:
+1) Upon Game Over, mark incorrectly flagged cells with a red x
+2) Use a ! and a ? for unsure (i.e. right-click events)
+3) Allow people to choose how big a mine-field they want
 **********/
 
 
@@ -22,151 +18,127 @@ function displayControls(numberOfMines) {
 
 	this.returnMineDisplay = function() {
 		return mineDisplayValue;
-	}
+	};
 	this.setMineDisplay = function(number) {
-		mineDisplay.innerHTML = mineDisplayValue = number;
-	}
+		mineDisplay.textContent = mineDisplayValue = number;
+	};
 	this.returnTimeDisplay = function() {
 		return timeDisplayValue;
-	}
+	};
 	this.setTimeDisplay = function(number) {
-		timeDisplay.innerHTML = timeDisplayValue = number;
-	}
+		timeDisplay.textContent = timeDisplayValue = number;
+	};
 }
-displayControls.prototype.adjustMineDisplay= function(number) {
-	this.setMineDisplay((this.returnMineDisplay() + number));
-}
+displayControls.prototype.adjustMineDisplay = function(number) {
+	this.setMineDisplay(this.returnMineDisplay() + number);
+};
 
-//Color for squares with a numerical value (i.e. they have adjacent mines)
-function determineColor (realValue) {
-		switch (realValue) {
-			case 1:
-				return "blue";
-				break;
-			case 2:
-				return "green";
-				break;
-			case 3:
-				return "red";
-				break;
-			case 4: 
-				return "purple";
-				break;
-			case "-": 
-				return "#e0e0e0";
-				break;
-			default:
-				return "black";
-		}	
-}
-
-//Allows us to add/remove classes for styling purposes
-function replaceClass(cell, class1, class2) {
-	if (cell.classList.contains(class1)) {
-		cell.classList.remove(class1);
-		cell.className += " " + class2;
-	}
+function setFace(name) {
+	document.getElementById("face-display").className = "face-" + name;
 }
 
 
-
-function board() {
-	this.rows = 8;
-	this.columns = 8;
-	this.mines = 10;
-	this.mineLocations = new Array(this.mines);
+function board(rows, columns, mines) {
+	this.rows = rows || 8;
+	this.columns = columns || 8;
+	this.mines = mines || 10;
+	this.mineLocations = [];
 	this.hiddenBoard = [];
 	this.totalSquares = this.rows * this.columns;
 	this.table = document.getElementById("myTable");
 }
-board.prototype.initialize = function () {
+board.prototype.cellId = function(row, col) {
+	return row + "-" + col;
+};
+board.prototype.parseId = function(id) {
+	var parts = id.split("-");
+	return { row: parseInt(parts[0], 10), col: parseInt(parts[1], 10) };
+};
+board.prototype.initialize = function() {
 	for (var i = 0; i < this.rows; i++) {
 		var row = document.createElement("tr");
-		this.hiddenBoard[i] = []; //start the creation of a two dimensional array
+		this.hiddenBoard[i] = [];
 
 		for (var j = 0; j < this.columns; j++) {
 			var cell = document.createElement("td");
-			cell.id = (i + "-" + j);
+			cell.id = this.cellId(i, j);
 			cell.className = "unpressed";
 			cell.innerHTML = "&nbsp;";
-	
+
 			row.appendChild(cell);
-			
-			this.hiddenBoard[i][j] = "-"; //set all corresponding cells to blank
+
+			this.hiddenBoard[i][j] = "-";
 		}
 		this.table.appendChild(row);
-	}	
-}
-board.prototype.reInitialize = function () {
+	}
+};
+board.prototype.reInitialize = function() {
 	for (var i = 0; i < this.rows; i++) {
-		this.hiddenBoard[i] = []; //start the creation of a two dimensional array
+		this.hiddenBoard[i] = [];
 		for (var j = 0; j < this.columns; j++) {
-			var cell = document.getElementById(i + "-" + j);
+			var cell = document.getElementById(this.cellId(i, j));
 			cell.innerHTML = "&nbsp;";
 			cell.className = "unpressed";
-			//cell.style.removeProperty("background");
-			this.hiddenBoard[i][j] = "-"; //set all corresponding cells to blank
+			this.hiddenBoard[i][j] = "-";
 		}
-	}	
-}
-board.prototype.generateMines = function () {
-	for (var i = 0; i < this.mines; i++) {
-		var location = Math.floor(Math.random() * this.totalSquares);
-		//Make sure no duplicates
-		while (this.mineLocations.indexOf(location) != -1) {
-			location = Math.floor(Math.random() * this.totalSquares);
-		}
-		this.mineLocations[i] = location;
 	}
-}
+};
+board.prototype.generateMines = function() {
+	this.mineLocations = [];
+	while (this.mineLocations.length < this.mines) {
+		var location = Math.floor(Math.random() * this.totalSquares);
+		if (this.mineLocations.indexOf(location) === -1) {
+			this.mineLocations.push(location);
+		}
+	}
+};
 board.prototype.showMines = function() {
 	for (var i = 0; i < this.mines; i++) {
-		var mineColumn = this.mineLocations[i] % this.rows
-		var mineRow = (this.mineLocations[i] - mineColumn) / (this.columns);
-		var mineId = "" + (mineRow) + "-" + (mineColumn);
-		var cell = document.getElementById(mineId);
-		cell.innerHTML = "*";
-		replaceClass(cell, "unpressed","pressed");
+		var mineRow = Math.floor(this.mineLocations[i] / this.columns);
+		var mineCol = this.mineLocations[i] % this.columns;
+		var cell = document.getElementById(this.cellId(mineRow, mineCol));
+		cell.textContent = "*";
+		cell.classList.remove("unpressed");
+		cell.classList.add("pressed");
 	}
-}
+};
 board.prototype.plantMines = function() {
 	for (var i = 0; i < this.mines; i++) {
-		var mineColumn = this.mineLocations[i] % this.rows
-		var mineRow = (this.mineLocations[i] - mineColumn) / (this.columns);
-		this.hiddenBoard[mineRow][mineColumn] = "*";
+		var mineRow = Math.floor(this.mineLocations[i] / this.columns);
+		var mineCol = this.mineLocations[i] % this.columns;
+		this.hiddenBoard[mineRow][mineCol] = "*";
 	}
-}
-board.prototype.countAdjacentMines = function() { //Count number of adjacent mines and record value
-	for (var i = 0; i < (this.rows); i++) {
-		for (var j = 0; j < (this.columns); j++) {
-			if(this.hiddenBoard[i][j] != "*") {
-				var counter = 0; 
-				try {	if (this.hiddenBoard[(i-1)][(j-1)] == "*") counter += 1; } catch (e) {}
-				try { if (this.hiddenBoard[(i-1)][j] == "*") counter += 1; } catch (e) {}
-				try { if (this.hiddenBoard[(i-1)][(j+1)] == "*") counter += 1; } catch (e) {}
-				try { if (this.hiddenBoard[i][(j-1)] == "*") counter += 1; } catch (e) {}
-				try { if (this.hiddenBoard[i][(j+1)] == "*") counter += 1; } catch (e) {}
-				try { if (this.hiddenBoard[(i+1)][(j-1)] == "*") counter += 1; } catch (e) {}
-				try { if (this.hiddenBoard[(i+1)][j] == "*") counter += 1; } catch (e) {}
-				try { if (this.hiddenBoard[(i+1)][(j+1)] == "*") counter += 1; } catch (e) {}
-				if (counter != 0)	this.hiddenBoard[i][j] = counter;			
-			}
-		}
-	}
-}
-
-board.prototype.showCells = function () {
+};
+board.prototype.countAdjacentMines = function() {
 	for (var i = 0; i < this.rows; i++) {
 		for (var j = 0; j < this.columns; j++) {
-			if (this.hiddenBoard[i][j] != "-") {
-				var element = document.getElementById(i + "-" + j);
-				element.innerHTML = this.hiddenBoard[i][j];	
-				element.style.background="lightblue";
+			if (this.hiddenBoard[i][j] === "*") continue;
+			var counter = 0;
+			for (var di = -1; di <= 1; di++) {
+				for (var dj = -1; dj <= 1; dj++) {
+					if (di === 0 && dj === 0) continue;
+					var ni = i + di;
+					var nj = j + dj;
+					if (ni < 0 || ni >= this.rows || nj < 0 || nj >= this.columns) continue;
+					if (this.hiddenBoard[ni][nj] === "*") counter++;
+				}
 			}
-			
+			if (counter !== 0) this.hiddenBoard[i][j] = counter;
 		}
 	}
-}
+};
+
+board.prototype.showCells = function() {
+	for (var i = 0; i < this.rows; i++) {
+		for (var j = 0; j < this.columns; j++) {
+			if (this.hiddenBoard[i][j] !== "-") {
+				var element = document.getElementById(this.cellId(i, j));
+				element.textContent = this.hiddenBoard[i][j];
+				element.classList.add("revealed");
+			}
+		}
+	}
+};
 
 function game() {
 	this.gameInSession = true; //using this mainly to stop timer race conditions
@@ -174,61 +146,59 @@ function game() {
 	this.timerStarted = false;
 	this.myBoard = new board();
 	this.myControls = new displayControls(this.myBoard.mines);
-	var that = this;	
+	var that = this;
 	this.incrementTimer = function() {
 		that.timeElapsed += 1;
 		that.myControls.setTimeDisplay(that.timeElapsed);
-	}
+	};
 }
-game.prototype.initialize = function () {
+game.prototype.initialize = function() {
 	this.myBoard.initialize();
 	this.myBoard.generateMines();
 	this.myBoard.plantMines();
 	this.myBoard.countAdjacentMines();
 
-	document.getElementById('board').appendChild(this.myBoard.table);
+	document.getElementById("board").appendChild(this.myBoard.table);
 	this.myControls.setMineDisplay(this.myBoard.mines);
-}
-game.prototype.startTimer = function () {
+};
+game.prototype.startTimer = function() {
 	this.timerStarted = true;
-	this.timer = setInterval(this.incrementTimer,1000);
-}
-game.prototype.checkIfWon = function (varBoard, varMine) {
-	var won = true;
-	loop1:
+	this.timer = setInterval(this.incrementTimer, 1000);
+};
+game.prototype.checkIfWon = function(varBoard, varMine) {
+	if (varMine !== 0) return;
 	for (var i = 0; i < varBoard.rows; i++) {
-		loop2:
 		for (var j = 0; j < varBoard.columns; j++) {
-			var shownValue = document.getElementById(i + "-" + j).innerHTML;
-			if (shownValue == "*" || shownValue == "&nbsp;" || varMine != 0){
-				won = false;
-			} 
+			var cell = document.getElementById(varBoard.cellId(i, j));
+			if (cell.classList.contains("unpressed") && !cell.classList.contains("flagged")) {
+				return;
+			}
 		}
 	}
-	if (won == true) this.youWin();
-}
-game.prototype.youWin =  function () { //stop timer and record winner name and time in table
+	this.youWin();
+};
+game.prototype.youWin = function() { //stop timer and record winner name and time in table
 	var winningTime = this.timeElapsed;
 	this.timerStarted = false;
 	clearInterval(this.timer);
-	document.getElementById("face-display").style.backgroundImage = "url('happy.gif')";
-	alert('your winning time is: ' + winningTime);
-	
+	setFace("happy");
+	alert("your winning time is: " + winningTime);
+
 	var name = prompt("What is your name?", "N/A");
 	var tdName = document.createElement("td");
 	var tdTime = document.createElement("td");
 	var trAppend = document.createElement("tr");
 	var winnersTable = document.getElementById("winners-table");
 
-	tdName.innerHTML = name;
-	tdTime.innerHTML = winningTime;
+	tdName.textContent = name;
+	tdTime.textContent = winningTime;
 	trAppend.appendChild(tdName);
 	trAppend.appendChild(tdTime);
 	winnersTable.appendChild(trAppend);
 	winnersTable.classList.remove("hidden");
-}
-game.prototype.restart = function () {
-	this.timerStarted = false
+};
+game.prototype.restart = function() {
+	this.timerStarted = false;
 	clearInterval(this.timer);
 	this.timeElapsed = 0;
 	this.myControls.setTimeDisplay(this.timeElapsed);
@@ -238,113 +208,127 @@ game.prototype.restart = function () {
 	this.myBoard.countAdjacentMines();
 	this.myControls.setMineDisplay(this.myBoard.mines);
 	this.gameInSession = true;
-	document.getElementById("face-display").style.backgroundImage = "url('bored.gif')";
-}
-game.prototype.addClickEvents = function () {
-	var that = this;
-	//Specify what happens on both click and right click
-	for (var i=0; i < this.myBoard.rows; i++) {
-		for (var j=0; j< this.myBoard.columns; j++) {
-			var cell = document.getElementById(i + "-" + j);
-			
-			//On Left Click
-			cell.addEventListener("click", function (){
-				if (that.gameInSession == true) {
-					var cellValue = that.myBoard.hiddenBoard[(this.id[0])][(this.id[2])];
-					if( cellValue == "*") that.gameOver(this); 
-					else {
-						if (that.timeElapsed == 0 && that.timerStarted == false) that.startTimer(); // start the timer if it hasn't been started yet
-						if (this.innerHTML == "?") that.myControls.adjustMineDisplay(1); //If a "?", this means it's a suspected mine. Since you'll be removing the suspected mine by clicking on it, we should increment minesLeft count
-						if ( cellValue == "-") that.recursiveLoop(this.id, that.myBoard);
-						else {
-							this.innerHTML = cellValue;
-							replaceClass(this, "unpressed","pressed");
-							this.style.color = determineColor(cellValue);
-					} 
-					//Check if you won the game
-					that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
-					}
+	setFace("bored");
+};
+game.prototype.revealCell = function(cell, value) {
+	cell.textContent = value;
+	cell.classList.remove("unpressed");
+	cell.classList.add("pressed");
+	cell.classList.add("n" + value);
+};
+game.prototype.floodReveal = function(startId) {
+	var board = this.myBoard;
+	var stack = [startId];
+	while (stack.length) {
+		var curId = stack.pop();
+		var initial = document.getElementById(curId);
+		if (!initial.classList.contains("unpressed") || initial.classList.contains("flagged")) {
+			continue;
+		}
+		var pos = board.parseId(curId);
+		initial.textContent = ".";
+		initial.classList.remove("unpressed");
+		initial.classList.add("pressed", "blank");
+
+		for (var di = -1; di <= 1; di++) {
+			for (var dj = -1; dj <= 1; dj++) {
+				if (di === 0 && dj === 0) continue;
+				var ni = pos.row + di;
+				var nj = pos.col + dj;
+				if (ni < 0 || ni >= board.rows || nj < 0 || nj >= board.columns) continue;
+				var realValue = board.hiddenBoard[ni][nj];
+				if (realValue === "*") continue;
+				var cell = document.getElementById(board.cellId(ni, nj));
+				if (!cell.classList.contains("unpressed") || cell.classList.contains("flagged")) continue;
+				if (realValue === "-") {
+					stack.push(board.cellId(ni, nj));
+				} else {
+					this.revealCell(cell, realValue);
 				}
+			}
+		}
+	}
+};
+game.prototype.addClickEvents = function() {
+	var that = this;
+	for (var i = 0; i < this.myBoard.rows; i++) {
+		for (var j = 0; j < this.myBoard.columns; j++) {
+			var cell = document.getElementById(this.myBoard.cellId(i, j));
+
+			//On Left Click
+			cell.addEventListener("click", function() {
+				if (!that.gameInSession) return;
+				var pos = that.myBoard.parseId(this.id);
+				var cellValue = that.myBoard.hiddenBoard[pos.row][pos.col];
+				if (cellValue === "*") {
+					that.gameOver(this);
+					return;
+				}
+				if (that.timeElapsed === 0 && !that.timerStarted) that.startTimer();
+				if (this.classList.contains("flagged")) {
+					this.classList.remove("flagged");
+					this.innerHTML = "&nbsp;";
+					that.myControls.adjustMineDisplay(1);
+				}
+				if (cellValue === "-") {
+					that.floodReveal(this.id);
+				} else {
+					that.revealCell(this, cellValue);
+				}
+				that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
 			});
-			
+
 			//On Right Click
 			cell.addEventListener("contextmenu", function(ev) {
-				if (that.gameInSession == true) {
-					ev.preventDefault();
-					if (that.timeElapsed == 0 && that.timerStarted == false) that.startTimer(); // start the timer if it hasn't been started yet
-					if (this.innerHTML != "?") {
-						this.innerHTML = "?";
-						this.className += " flagged";
-						that.myControls.adjustMineDisplay(-1);
-					} else {
-						this.innerHTML = "&nbsp;";
-						this.classList.remove("flagged");
-						that.myControls.adjustMineDisplay(1);
-					}
-					//Now check if you won the game
-					that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
+				if (!that.gameInSession) return;
+				ev.preventDefault();
+				if (!this.classList.contains("unpressed")) return;
+				if (that.timeElapsed === 0 && !that.timerStarted) that.startTimer();
+				if (!this.classList.contains("flagged")) {
+					this.innerHTML = "?";
+					this.classList.add("flagged");
+					that.myControls.adjustMineDisplay(-1);
+				} else {
+					this.innerHTML = "&nbsp;";
+					this.classList.remove("flagged");
+					that.myControls.adjustMineDisplay(1);
 				}
-			});
-			cell.addEventListener("mousedown", function () {
-				if (that.gameInSession == true) {
-					document.getElementById("face-display").style.backgroundImage = "url('oh.gif')";
-				}
-			});
-			window.addEventListener("mouseup", function() { //using window here since you might start the click on the cell and move over and let go on the side lol
-				if (that.gameInSession == true) {
-					document.getElementById("face-display").style.backgroundImage = "url('bored.gif')";
-				}
+				that.checkIfWon(that.myBoard, that.myControls.returnMineDisplay());
 			});
 		}
 	}
-}
-game.prototype.recursiveLoop = function(id, myBoard1) {
-	var i = parseInt(id[0]);
-	var j = parseInt(id[2]);
-	var initialCell = document.getElementById(id);
-	initialCell.innerHTML = "."; // function is only called on blank cells, so we know this is blank. we're putting this because in the event of an empty row, it won't collapse in height
-	replaceClass(initialCell, "unpressed","pressed blank");
 
-	var manipulators = [0,-1,1];
-	for (var a in manipulators) {
-		for (var b in manipulators) {
-			try {
-				var val1 = i + parseInt(manipulators[a]); 
-				var val2 = j + parseInt(manipulators[b]);
-				var realValue = myBoard1.hiddenBoard[val1][val2];
-				var cell = document.getElementById(val1 + "-" + val2);
-				
-				if ( realValue != "*" && cell.innerHTML == "&nbsp;") {
-					cell.innerHTML = realValue;
-					replaceClass(cell, "unpressed","pressed");
-					cell.style.color = determineColor(realValue);
-					if (realValue == "-") this.recursiveLoop(val1 + "-" + val2,myBoard1);
-				} 
-			}	
-			catch (err) {}
+	//Single delegated mousedown on the table, single mouseup on the window
+	this.myBoard.table.addEventListener("mousedown", function(ev) {
+		if (that.gameInSession && ev.target.tagName === "TD") {
+			setFace("oh");
 		}
-	}	
-}
+	});
+	window.addEventListener("mouseup", function() {
+		if (that.gameInSession) {
+			setFace("bored");
+		}
+	});
+
+	//Restart button (was an inline onclick in HTML)
+	document.getElementById("face-display").addEventListener("click", function() {
+		that.restart();
+	});
+};
 game.prototype.gameOver = function(cell) {
 	this.gameInSession = false;
 	this.timerStarted = false;
 	clearInterval(this.timer);
-	cell.innerHTML = "*";
-	replaceClass(cell, "unpressed","pressed");
-	cell.style.color = "red";
-	alert('You Lose :(');
+	cell.textContent = "*";
+	cell.classList.remove("unpressed");
+	cell.classList.add("pressed", "exploded");
+	alert("You Lose :(");
 	this.myBoard.showMines();
-	document.getElementById("face-display").style.backgroundImage = "url('sad.gif')";
-}
+	setFace("sad");
+};
 
 
 
 var myGame = new game();
 myGame.initialize();
 myGame.addClickEvents(); //add the left-click and right-click event listeners
-
-
-
-
-
-

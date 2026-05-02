@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 	<title>Minesweeper - by Aydin</title>
@@ -7,23 +8,25 @@
 <h1>Aydin's Minesweeper</h1>
 <div id="board">
 	<table id="myTable">
-	<th>
+	<thead>
 		<tr>
-			<td colspan = "8">
+			<td colspan="8">
 				<div id="time-display"><span id="time-elapsed">0</span></div>
-				<div id="face-display" onclick="myGame.restart()"><span id="face">&nbsp;</span></div>
+				<div id="face-display" class="face-bored"><span id="face">&nbsp;</span></div>
 				<div id="mine-display"><span id="mines-left">&nbsp;</span></div>
 			</td>
 		</tr>
-	</th>
+	</thead>
 	</table>
 </div>
 <div id="winners">
 	<table id="winners-table" class="hidden">
-		<th><tr>
-			<td>Name</td>
-			<td>Time</td>
-		</tr></th>
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Time</th>
+			</tr>
+		</thead>
 	</table>
 </div>
 <script src="minesweeper-aydin.js"></script>
