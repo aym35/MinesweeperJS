@@ -1,0 +1,23 @@
+{
+  "name": "minesweeperjs",
+  "version": "1.0.0",
+  "description": "Browser Minesweeper",
+  "main": "minesweeper-aydin.js",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aym35/MinesweeperJS"
+  },
+  "keywords": [
+    "minesweeper",
+    "game"
+  ],
+  "author": "Aydin",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
+}
